@@ -74,8 +74,8 @@ for page in range(FROM_PAGE, TO_PAGE):
 
         link_to_docx = button.a["href"]
         item["docx"] = link_to_docx
-        paragraphs = parsing_docx_file(link_to_docx)
-        item["paragraphs"] = paragraphs
+        # paragraphs = parsing_docx_file(link_to_docx)
+        # item["paragraphs"] = paragraphs
         
         right_ba_info = soup.find("div", {"id": "right-ba-info"})
         item["info"] = right_ba_info.h1.text
