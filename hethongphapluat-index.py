@@ -36,6 +36,8 @@ for page in range(FROM_PAGE, TO_PAGE):
             link = div.a["href"]
             title = div.a["title"]
 
+            title = " ".join(title.split()[:5])
+
             pb.set_postfix_str(f"Parsing \"{title}\"")
             
             if link in parsed_link:
@@ -52,8 +54,13 @@ for page in range(FROM_PAGE, TO_PAGE):
 
             item = {}
 
-            download_section = soup.find("div", {"class": "download-section"})
-            button = download_section.find_all("button")[1]
+            try:
+                download_section = soup.find("div", {"class": "download-section"})
+                button = download_section.find_all("button")[1]
+            except:
+                print("Cannot find download section for ", link)
+                continue
+
             link_to_docx = button.a["href"]
             item["docx"] = link_to_docx
             
