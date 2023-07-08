@@ -45,51 +45,48 @@ for page in range(FROM_PAGE, TO_PAGE):
 
     print(url)
 
-    with tqdm(main_soup.find_all('div', class_="list-body")) as pb:
-        for div in pb:
-            link = div.a["href"]
-            title = div.a["title"]
+    for div in main_soup.find_all('div', class_="list-body"):
+        link = div.a["href"]
+        title = div.a["title"]
 
-            title = " ".join(title.split()[:5])
+        title = " ".join(title.split()[:5])
+        
+        if link in parsed_link:
+            continue
 
-            pb.set_postfix_str(f"Parsing \"{title}\"")
-            
-            if link in parsed_link:
-                continue
-
-            link = os.path.join(domain, link)
-            while True:
-                try:
-                    content = session.get(link).content
-                    break
-                except:
-                    continue
-            soup = BeautifulSoup(content, features="lxml")
-
-            item = {}
-
+        link = os.path.join(domain, link)
+        while True:
             try:
-                download_section = soup.find("div", {"class": "download-section"})
-                button = download_section.find_all("button")[1]
+                content = session.get(link).content
+                break
             except:
-                print("Cannot find download section for ", link)
                 continue
+        soup = BeautifulSoup(content, features="lxml")
 
-            link_to_docx = button.a["href"]
-            item["docx"] = link_to_docx
-            paragraphs = parsing_docx_file(link_to_docx)
-            item["paragraphs"] = paragraphs
-            
-            right_ba_info = soup.find("div", {"id": "right-ba-info"})
-            item["info"] = right_ba_info.h1.text
+        item = {}
 
-            ba_info = soup.find("div", {"class": "ba-info"})
-            li = ba_info.ul.find_all("li")[0]
-            li_text = li.text
-            li_text = re.sub("Số bản án:", "", li_text).strip()
-            item["number"] = li_text
+        try:
+            download_section = soup.find("div", {"class": "download-section"})
+            button = download_section.find_all("button")[1]
+        except:
+            print("Cannot find download section for ", link)
+            continue
 
-            data.append(item)
+        link_to_docx = button.a["href"]
+        item["docx"] = link_to_docx
+        paragraphs = parsing_docx_file(link_to_docx)
+        item["paragraphs"] = paragraphs
+        
+        right_ba_info = soup.find("div", {"id": "right-ba-info"})
+        item["info"] = right_ba_info.h1.text
+
+        ba_info = soup.find("div", {"class": "ba-info"})
+        li = ba_info.ul.find_all("li")[0]
+        li_text = li.text
+        li_text = re.sub("Số bản án:", "", li_text).strip()
+        item["number"] = li_text
+
+        data.append(item)
 
 json.dump(data, open(f"hethongphapluat-banan_from-{FROM_PAGE}_to-{TO_PAGE}.json", "w+"), ensure_ascii=False, indent=4)
 print("Done")
