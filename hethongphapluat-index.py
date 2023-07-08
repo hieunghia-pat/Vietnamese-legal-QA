@@ -5,6 +5,7 @@ import json
 import os
 import re
 import argparse
+import docx
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--from-page", type=int, required=True)
@@ -17,6 +18,19 @@ TO_PAGE = args.to_page
 domain = "https://hethongphapluat.com"
 parsed_link = set()
 data = []
+
+def parsing_docx_file(link: str) -> list:
+    docx_stream = requests.get(link, stream=True)
+    with open("file.docx", "wb") as docx_file:
+        docx_file.write(docx_stream.content)
+
+    doc = docx.Document("file.docx")
+    paragraphs = []
+    for paragraph in doc.paragraphs:
+        if len(paragraph.text.split()) > 0:
+            paragraphs.append(paragraph.text)
+
+    return paragraphs
 
 for page in range(FROM_PAGE, TO_PAGE):
     url = os.path.join(domain, f"thu-vien-ban-an_page-{page}.html")
@@ -63,6 +77,8 @@ for page in range(FROM_PAGE, TO_PAGE):
 
             link_to_docx = button.a["href"]
             item["docx"] = link_to_docx
+            paragraphs = parsing_docx_file(link_to_docx)
+            item["paragraphs"] = paragraphs
             
             right_ba_info = soup.find("div", {"id": "right-ba-info"})
             item["info"] = right_ba_info.h1.text
