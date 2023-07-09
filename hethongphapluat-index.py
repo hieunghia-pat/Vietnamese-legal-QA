@@ -80,7 +80,8 @@ for page in range(FROM_PAGE, TO_PAGE):
             continue
 
         link_to_docx = button.a["href"]
-        item["docx"] = link_to_docx
+        if link_to_docx == "":
+            continue
         # paragraphs = parsing_docx_file(link_to_docx)
         # item["paragraphs"] = paragraphs
         
