@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from tqdm import tqdm
+import os
 import json
 import os
 import re
@@ -31,6 +32,11 @@ def parsing_docx_file(link: str) -> list:
             paragraphs.append(paragraph.text)
 
     return paragraphs
+
+def save_docx(link: str, docx_id: str) -> None:
+    docx_stream = requests.get(link, stream=True)
+    with open(os.path.join("data", f"{docx_id}.docx"), "wb") as docx_file:
+        docx_file.write(docx_stream.content)
 
 for page in range(FROM_PAGE, TO_PAGE):
     url = os.path.join(domain, f"thu-vien-ban-an_page-{page}.html")
@@ -85,6 +91,7 @@ for page in range(FROM_PAGE, TO_PAGE):
         li_text = li.text
         li_text = re.sub("Số bản án:", "", li_text).strip()
         item["number"] = li_text
+        save_docx(link_to_docx, li_text)
 
         data.append(item)
 
