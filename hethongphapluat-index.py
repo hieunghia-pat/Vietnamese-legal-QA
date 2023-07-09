@@ -34,6 +34,7 @@ def parsing_docx_file(link: str) -> list:
     return paragraphs
 
 def save_docx(link: str, docx_id: str) -> None:
+    docx_id = re.sub("/", "-", docx_id)
     docx_stream = requests.get(link, stream=True)
     with open(os.path.join("data", f"{docx_id}.docx"), "wb") as docx_file:
         docx_file.write(docx_stream.content)
