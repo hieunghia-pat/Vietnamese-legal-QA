@@ -20,23 +20,10 @@ FROM_PAGE = args.from_page
 TO_PAGE = args.to_page
 domain = "https://hethongphapluat.com"
 
-def parsing_docx_file(link: str) -> list:
-    docx_stream = requests.get(link, stream=True)
-    with open("file.docx", "wb") as docx_file:
-        docx_file.write(docx_stream.content)
-
-    doc = docx.Document("file.docx")
-    paragraphs = []
-    for paragraph in doc.paragraphs:
-        if len(paragraph.text.split()) > 0:
-            paragraphs.append(paragraph.text)
-
-    return paragraphs
-
 def save_docx(link: str, docx_id: str) -> None:
     docx_id = re.sub("/", "-", docx_id)
     docx_stream = requests.get(link, stream=True)
-    with open(os.path.join("data", f"{docx_id}.docx"), "wb") as docx_file:
+    with open(os.path.join("tmp", f"{docx_id}.docx"), "wb") as docx_file:
         docx_file.write(docx_stream.content)
 
 def start_crawling_page(page_id):
@@ -56,9 +43,8 @@ def start_crawling_page(page_id):
         thread.start()
         threads.append(thread)
 
-    print("Parsed ", url)
-
 def start_crawling_docx(link):
+    link = os.path.join(domain, link)
     print("Start collecting docx file in ", link)
     session = requests.Session()   
     while True:
@@ -78,7 +64,7 @@ def start_crawling_docx(link):
 
     link_to_docx = button.a["href"]
     if link_to_docx == "":
-        print("There is not docx file available ")
+        print("There is no docx file available in", link)
         return
 
     while True:
@@ -94,19 +80,17 @@ def start_crawling_docx(link):
 
     print("Collected docx file in ", link)
 
-processes = []
-for page in range(FROM_PAGE, TO_PAGE):
-    process = multiprocessing.Process(
-        target=start_crawling_page, 
-        args=(page, )
-    )
-    process.start()
-    processes.append(process)
-
-for process in processes:
-    process.join()
-
-print("Done")
-
 if __name__ == "__main__":
-    pass
+    processes = []
+    for page in range(FROM_PAGE, TO_PAGE):
+        process = multiprocessing.Process(
+            target=start_crawling_page, 
+            args=(page, )
+        )
+        process.start()
+        processes.append(process)
+
+    for process in processes:
+        process.join()
+
+    print("Done")
