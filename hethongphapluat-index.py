@@ -88,12 +88,18 @@ for page in range(FROM_PAGE, TO_PAGE):
         right_ba_info = soup.find("div", {"id": "right-ba-info"})
         item["info"] = right_ba_info.h1.text
 
-        ba_info = soup.find("div", {"class": "ba-info"})
-        li = ba_info.ul.find_all("li")[0]
-        li_text = li.text
-        li_text = re.sub("Số bản án:", "", li_text).strip()
-        item["number"] = li_text
-        save_docx(link_to_docx, li_text)
+        while True:
+            try:
+                ba_info = soup.find("div", {"class": "ba-info"})
+                li = ba_info.ul.find_all("li")[0]
+                li_text = li.text
+                li_text = re.sub("Số bản án:", "", li_text).strip()
+                item["number"] = li_text
+                save_docx(link_to_docx, li_text)
+                break
+            except:
+                continue
+
 
         data.append(item)
 
