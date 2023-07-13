@@ -40,11 +40,11 @@ def save_docx(link: str, docx_id: str) -> None:
         docx_file.write(docx_stream.content)
 
 def start_crawling_page(page_id):
-    url = os.path.join(domain, f"thu-vien-ban-an_page-{page}.html")
+    url = os.path.join(domain, f"thu-vien-ban-an_page-{page_id}.html")
     
     main_soup = BeautifulSoup(requests.get(url).content, features="lxml")
 
-    print(url)
+    print("Start parsing ", url)
 
     threads = []
     for div in main_soup.find_all('div', class_="list-body"):
@@ -56,7 +56,10 @@ def start_crawling_page(page_id):
         thread.start()
         threads.append(thread)
 
+    print("Parsed ", url)
+
 def start_crawling_docx(link):
+    print("Start collecting docx file in ", link)
     session = requests.Session()   
     while True:
         try:
@@ -88,6 +91,8 @@ def start_crawling_docx(link):
             break
         except:
             continue
+
+    print("Collected docx file in ", link)
 
 processes = []
 for page in range(FROM_PAGE, TO_PAGE):
