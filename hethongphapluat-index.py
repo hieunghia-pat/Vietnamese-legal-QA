@@ -49,10 +49,12 @@ def start_crawling_page(page_id):
     threads = []
     for div in main_soup.find_all('div', class_="list-body"):
         link = div.a["href"]
-        threads.append(threading.Thread(
+        thread = threading.Thread(
             target=start_crawling_docx,
             args=(link, )
-        ))
+        )
+        thread.start()
+        threads.append(thread)
 
     for thread in threads:
         thread.join()
@@ -92,10 +94,12 @@ def start_crawling_docx(link):
 
 processes = []
 for page in range(FROM_PAGE, TO_PAGE):
-    processes.append(multiprocessing.Process(
+    process = multiprocessing.Process(
         target=start_crawling_page, 
         args=(page, )
-    ))
+    )
+    process.start()
+    processes.append(process)
 
 for process in processes:
     process.join()
