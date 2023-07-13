@@ -56,9 +56,6 @@ def start_crawling_page(page_id):
         thread.start()
         threads.append(thread)
 
-    for thread in threads:
-        thread.join()
-
 def start_crawling_docx(link):
     session = requests.Session()   
     while True:
