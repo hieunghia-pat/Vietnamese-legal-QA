@@ -1,35 +1,31 @@
 from bs4 import BeautifulSoup
 import requests
-from tqdm import tqdm
 import os
-import json
 import os
 import re
-import argparse
-import docx
 import threading
-import multiprocessing
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--from-page", type=int, required=True)
-parser.add_argument("--to-page", type=int, required=True)
-args = parser.parse_args()
 
 MAX_PAGE = 43_035
-FROM_PAGE = args.from_page
-TO_PAGE = args.to_page
 domain = "https://hethongphapluat.com"
+id = 0
 
-def save_docx(link: str, docx_id: str) -> None:
-    docx_id = re.sub("/", "-", docx_id)
-    docx_stream = requests.get(link, stream=True)
-    with open(os.path.join("tmp", f"{docx_id}.docx"), "wb") as docx_file:
-        docx_file.write(docx_stream.content)
+def save_pdf(link: str, pdf_id: str) -> None:
+    pdf_id = re.sub("/", "-", pdf_id)
+    pdf_stream = requests.get(link, stream=True)
+    global id
+    id += 1
+    with open(os.path.join("banan-data", f"{id}.pdf"), "wb") as pdf_file:
+        pdf_file.write(pdf_stream.content)
 
 def start_crawling_page(page_id):
     url = os.path.join(domain, f"thu-vien-ban-an_page-{page_id}.html")
-    
-    main_soup = BeautifulSoup(requests.get(url).content, features="lxml")
+    while True:
+        try:
+            main_content = requests.get(url).content
+            break
+        except:
+            continue
+    main_soup = BeautifulSoup(main_content, features="lxml")
 
     print("Start parsing ", url)
 
@@ -37,15 +33,15 @@ def start_crawling_page(page_id):
     for div in main_soup.find_all('div', class_="list-body"):
         link = div.a["href"]
         thread = threading.Thread(
-            target=start_crawling_docx,
+            target=start_crawling_pdf,
             args=(link, )
         )
         thread.start()
         threads.append(thread)
 
-def start_crawling_docx(link):
+def start_crawling_pdf(link):
     link = os.path.join(domain, link)
-    print("Start collecting docx file in ", link)
+    print("Start collecting pdf file in ", link)
     session = requests.Session()   
     while True:
         try:
@@ -55,42 +51,26 @@ def start_crawling_docx(link):
             continue
     soup = BeautifulSoup(content, features="lxml")
 
-    try:
-        download_section = soup.find("div", {"class": "download-section"})
-        button = download_section.find_all("button")[1]
-    except:
-        print("Cannot find download section for ", link)
-        return
-
-    link_to_docx = button.a["href"]
-    if link_to_docx == "":
-        print("There is no docx file available in", link)
-        return
-
     while True:
         try:
+            al_content = soup.find("div", {"id": "al_content"})
+            link_to_pdf = al_content.object["data"]
+            if link_to_pdf == "":
+                print("There is no pdf file available in", link)
+                return
             ba_info = soup.find("div", {"class": "ba-info"})
             li = ba_info.ul.find_all("li")[0]
             li_text = li.text
             li_text = re.sub("Số bản án:", "", li_text).strip()
-            save_docx(link_to_docx, li_text)
+            save_pdf(link_to_pdf, li_text)
             break
         except:
             continue
 
-    print("Collected docx file in ", link)
+    print("Collected pdf file in ", link)
 
 if __name__ == "__main__":
-    processes = []
-    for page in range(FROM_PAGE, TO_PAGE):
-        process = multiprocessing.Process(
-            target=start_crawling_page, 
-            args=(page, )
-        )
-        process.start()
-        processes.append(process)
-
-    for process in processes:
-        process.join()
+    for page in range(1, MAX_PAGE+1):
+        start_crawling_page(page)
 
     print("Done")

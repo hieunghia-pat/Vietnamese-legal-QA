@@ -1,2 +1,5 @@
 data
 *.json
+tmp
+*.zip
+*.download
