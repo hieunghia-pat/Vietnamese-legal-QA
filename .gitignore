@@ -1,5 +1,6 @@
-data
+*data*
 *.json
 tmp
 *.zip
 *.download
+*.pdf

@@ -2,20 +2,22 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import os
-import re
 import threading
+from pdfminer.high_level import extract_text
 
 MAX_PAGE = 43_035
 domain = "https://hethongphapluat.com"
-id = 0
 
-def save_pdf(link: str, pdf_id: str) -> None:
-    pdf_id = re.sub("/", "-", pdf_id)
+def save_pdf(link: str, page, ith) -> None:
     pdf_stream = requests.get(link, stream=True)
-    global id
-    id += 1
-    with open(os.path.join("banan-data", f"{id}.pdf"), "wb") as pdf_file:
+    with open(os.path.join("banan-data", f"page_{page}_number_{ith}.pdf"), "wb") as pdf_file:
         pdf_file.write(pdf_stream.content)
+    
+    text = extract_text(os.path.join("banan-data", f"page_{page}_number_{ith}.pdf"))
+    with open(os.path.join("banan-data", f"page_{page}_number_{ith}.txt"), "w+") as text_file:
+            text_file.write(text)
+
+    os.remove(os.path.join("banan-data", f"page_{page}_number_{ith}.pdf"))
 
 def start_crawling_page(page_id):
     url = os.path.join(domain, f"thu-vien-ban-an_page-{page_id}.html")
@@ -29,17 +31,15 @@ def start_crawling_page(page_id):
 
     print("Start parsing ", url)
 
-    threads = []
-    for div in main_soup.find_all('div', class_="list-body"):
+    for ith, div in enumerate(main_soup.find_all('div', class_="list-body"), start=1):
         link = div.a["href"]
         thread = threading.Thread(
             target=start_crawling_pdf,
-            args=(link, )
+            args=(link, page, ith, )
         )
         thread.start()
-        threads.append(thread)
 
-def start_crawling_pdf(link):
+def start_crawling_pdf(link, page, ith):
     link = os.path.join(domain, link)
     print("Start collecting pdf file in ", link)
     session = requests.Session()   
@@ -58,11 +58,7 @@ def start_crawling_pdf(link):
             if link_to_pdf == "":
                 print("There is no pdf file available in", link)
                 return
-            ba_info = soup.find("div", {"class": "ba-info"})
-            li = ba_info.ul.find_all("li")[0]
-            li_text = li.text
-            li_text = re.sub("Số bản án:", "", li_text).strip()
-            save_pdf(link_to_pdf, li_text)
+            save_pdf(link_to_pdf, page, ith)
             break
         except:
             continue
@@ -70,7 +66,5 @@ def start_crawling_pdf(link):
     print("Collected pdf file in ", link)
 
 if __name__ == "__main__":
-    for page in range(1, MAX_PAGE+1):
+    for page in range(1, 2):
         start_crawling_page(page)
-
-    print("Done")
