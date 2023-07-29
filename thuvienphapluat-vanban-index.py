@@ -6,8 +6,9 @@ import threading
 import re
 import os
 
-def parsing_content(link, id, name):
-    print(f"Getting {name}")
+BASE_DIR = "thuvienphapluat-links"
+
+def parsing_content(link, name):
     session = requests.Session()
     while True:
         try:
@@ -20,30 +21,32 @@ def parsing_content(link, id, name):
     soup = BeautifulSoup(content, 'html.parser')
     div = soup.find("div", {"class": "content1"})
     passages = []
-    with tqdm(div.find_all("p")) as ps:
+    with tqdm(div.find_all("p"), desc=f"Getting {name}") as ps:
         for p in ps:
             passages.append(p.text)
 
     passage = "\n\n".join(passages)
     name = re.sub("/", "", name)
-    json.dump({
-        "id": id,
-        "link": link,
-        "passage": passage
-    }, open(os.path.join("data", f"data_{id}_{name}.json"), "w+"), ensure_ascii=False, indent=4)
+    with open(os.path.join("data", f"{name}.json"), "w+") as file:
+        file.write(passage)
 
 if __name__ == "__main__":
-    data = json.load(open("DataForDemo.json"))
+    txt_files = os.listdir(BASE_DIR)
+    links = []
+    for txt_file in txt_files:
+        with open(os.path.join(BASE_DIR, txt_file)) as file:
+            links.extend(file.readlines())
 
+    total_threats = len(links) // 10
     current_threads = []
-    for key in data:
-        item = data[key]
-        link_item = item["href"]
-        for law_name in link_item:
-            link = link_item[law_name]
+    for ith in range(total_threats):
+        for link in links[ith*total_threats: (ith+1)*total_threats]:
+            name = link.split("/")[-1]
+            name = re.sub(".aspx", "", name)
+            name = re.sub("/", "-". name)
             thread = threading.Thread(
                 target=parsing_content,
-                args=(link, key, law_name, )
+                args=(link, name)
             )
             thread.start()
             current_threads.append(thread)
