@@ -26,9 +26,13 @@ def parsing_content(link, name):
             passages.append(p.text)
 
     passage = "\n\n".join(passages)
-    name = re.sub("/", "", name)
-    with open(os.path.join("data", f"{name}.json"), "w+") as file:
-        file.write(passage)
+    if len(name) > 100:
+        name = name[:100]
+    json.dump({
+        "link": link,
+        "name": name,
+        "passage": passage
+    }, open(os.path.join("data", f"{name}.json"), "w+"), ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     txt_files = os.listdir(BASE_DIR)
@@ -37,13 +41,15 @@ if __name__ == "__main__":
         with open(os.path.join(BASE_DIR, txt_file)) as file:
             links.extend(file.readlines())
 
-    total_threats = len(links) // 10
+    total_bins = len(links) // 10
     current_threads = []
-    for ith in range(total_threats):
-        for link in links[ith*total_threats: (ith+1)*total_threats]:
+    for ith in range(total_bins):
+        for link in links[ith*total_bins: (ith+1)*total_bins]:
+            link = link.strip()
             name = link.split("/")[-1]
             name = re.sub(".aspx", "", name)
-            name = re.sub("/", "-". name)
+            name = re.sub("/", "-", name)
+            name = "-".join(name.split("-")[:-1])
             thread = threading.Thread(
                 target=parsing_content,
                 args=(link, name)
